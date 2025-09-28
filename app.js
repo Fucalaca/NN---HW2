@@ -775,8 +775,8 @@ function toggleVisor() {
         // Если визор закрыт, открываем его и создаем графики
         visorInstance.open();
         recreateVisualizations();
-        button.innerHTML = '<span class="icon">📊</span> Hide charts';
-        button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
+        button.innerHTML = '<span class="icon">📊</span> Show charts';
+        button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
     }
 }
 
@@ -875,8 +875,8 @@ document.addEventListener('DOMContentLoaded', function() {
     tfvis.visor().open = function() {
         const button = document.getElementById('visor-toggle-btn');
         if (button) {
-            button.innerHTML = '<span class="icon">📊</span> Hide charts';
-            button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
+            button.innerHTML = '<span class="icon">📊</span> Show charts';
+            button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         }
         return originalOpen.call(this);
     };
