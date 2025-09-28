@@ -760,46 +760,57 @@ function toggleVisor() {
     let visor = document.querySelector('.tfjs-visor__root');
     const button = document.getElementById('visor-toggle-btn');
     
-    if (!visor) {
-        // Если визор был скрыт через стандартную кнопку, создаем его заново
-        if (window.tfvis && trainData) {
-            // Создаем простой график чтобы активировать визор
-            const surface = { name: 'Restore Visor', tab: 'Charts' };
-            tfvis.render.barchart(surface, [{index: 'Restore', value: 0}], {});
-            
-            // Даем время на создание визора
-            setTimeout(() => {
-                visor = document.querySelector('.tfjs-visor__root');
-                if (visor) {
-                    visor.style.display = 'block';
-                    button.innerHTML = '<span class="icon">📊</span> Hide charts';
-                    button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
-                    
-                    // Пересоздаем основные графики
-                    recreateVisualizations();
-                }
-            }, 100);
-        } else {
-            alert('Charts are not loaded yet. Please click "Inspect Data" first.');
-        }
+    if (!visor || visor.style.display === 'none') {
+        // Если визор скрыт или удален, показываем его
+        showVisor();
+    } else {
+        // Если визор видим, скрываем его
+        hideVisor();
+    }
+}
+
+// Функция для показа визора
+function showVisor() {
+    const button = document.getElementById('visor-toggle-btn');
+    
+    if (!trainData) {
+        alert('Charts are not loaded yet. Please click "Inspect Data" first.');
         return;
     }
     
-    // Стандартное переключение видимости
-    if (visor.style.display === 'none' || visor.style.display === '') {
-        visor.style.display = 'block';
+    // Используем tfvis.visor().toggle() для надежного открытия
+    const visorInstance = tfvis.visor();
+    visorInstance.toggle();
+    
+    // Ждем пока визор откроется и пересоздаем графики
+    setTimeout(() => {
+        recreateVisualizations();
         button.innerHTML = '<span class="icon">📊</span> Hide charts';
         button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
-    } else {
-        visor.style.display = 'none';
-        button.innerHTML = '<span class="icon">📊</span> Show charts';
-        button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-    }
+    }, 300);
+}
+
+// Функция для скрытия визора
+function hideVisor() {
+    const button = document.getElementById('visor-toggle-btn');
+    tfvis.visor().toggle();
+    button.innerHTML = '<span class="icon">📊</span> Show charts';
+    button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 }
 
 // Функция для пересоздания визуализаций
 function recreateVisualizations() {
     if (!trainData) return;
+    
+    // Очищаем все существующие вкладки
+    const visor = tfvis.visor();
+    const tabs = visor.getTabs();
+    tabs.forEach(tab => {
+        visor.removeTab(tab);
+    });
+    
+    // Создаем новую вкладку для графиков
+    visor.el.classList.remove('hidden');
     
     // Пересоздаем основные графики
     const survivalBySex = {};
@@ -865,17 +876,25 @@ function recreateVisualizations() {
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    // Сохраняем ссылку на оригинальную функцию tfjs-vis
-    const originalShow = tfvis.visor().hide;
-    
-    // Переопределяем метод hide чтобы отслеживать состояние
+    // Перехватываем стандартное скрытие визора
+    const originalHide = tfvis.visor().hide;
     tfvis.visor().hide = function() {
         const button = document.getElementById('visor-toggle-btn');
         if (button) {
             button.innerHTML = '<span class="icon">📊</span> Show charts';
             button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         }
+        return originalHide.call(this);
+    };
+    
+    // Перехватываем стандартное открытие визора
+    const originalShow = tfvis.visor().show;
+    tfvis.visor().show = function() {
+        const button = document.getElementById('visor-toggle-btn');
+        if (button) {
+            button.innerHTML = '<span class="icon">📊</span> Hide charts';
+            button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
+        }
         return originalShow.call(this);
     };
 });
-
