@@ -205,7 +205,8 @@ function createPreviewTable(data) {
         { 
             xLabel: 'Sex', 
             yLabel: 'Survival Rate (%)',
-            yAxisDomain: [0, 100]  // Explicitly set Y-axis range
+            yAxisDomain: [0, 100], // Explicitly set Y-axis range
+            color: ['#FF6B6B', '#4ECDC4']
         }
     );
     
@@ -239,7 +240,8 @@ function createPreviewTable(data) {
         { 
             xLabel: 'Passenger Class', 
             yLabel: 'Survival Rate (%)',
-            yAxisDomain: [0, 100]  // Explicitly set Y-axis range
+            yAxisDomain: [0, 100],  // Explicitly set Y-axis range
+            color: ['#45B7D1', '#96CEB4', '#FEEA00']
         }
     );
     
