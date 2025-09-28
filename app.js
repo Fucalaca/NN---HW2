@@ -137,8 +137,41 @@ function inspectData() {
     missingInfo += '</ul>';
     
     statsDiv.innerHTML += `<p>${shapeInfo}</p><p>${targetInfo}</p>${missingInfo}`;
+        // Create visualizations
+    createVisualizations();
     
-    // Create visualizations
+    // Enable the preprocess button
+    document.getElementById('preprocess-btn').disabled = false;
+}
+
+// Create a preview table from data
+function createPreviewTable(data) {
+    const table = document.createElement('table');
+    
+    // Create header row
+    const headerRow = document.createElement('tr');
+    Object.keys(data[0]).forEach(key => {
+        const th = document.createElement('th');
+        th.textContent = key;
+        headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+    
+    // Create data rows
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        Object.values(row).forEach(value => {
+            const td = document.createElement('td');
+            td.textContent = value !== null ? value : 'NULL';
+            tr.appendChild(td);
+        });
+        table.appendChild(tr);
+    });
+    
+    return table;
+}
+
+// Create visualizations using tfjs-vis
   function createVisualizations() {
     const chartsDiv = document.getElementById('charts');
     chartsDiv.innerHTML = '<h3>Data Visualizations</h3>';
