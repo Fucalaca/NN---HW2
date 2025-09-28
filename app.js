@@ -757,35 +757,125 @@ async function exportResults() {
 
 // Функция для переключения визора tfjs-vis
 function toggleVisor() {
-    const visor = document.querySelector('.tfjs-visor__root');
+    let visor = document.querySelector('.tfjs-visor__root');
     const button = document.getElementById('visor-toggle-btn');
     
-    if (visor) {
-        if (visor.style.display === 'none' || visor.style.display === '') {
-            // Показываем визор
-            visor.style.display = 'block';
-            button.innerHTML = '<span class="icon">📊</span> Скрыть графики';
-            button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
+    if (!visor) {
+        // Если визор был скрыт через стандартную кнопку, создаем его заново
+        if (window.tfvis && trainData) {
+            // Создаем простой график чтобы активировать визор
+            const surface = { name: 'Restore Visor', tab: 'Charts' };
+            tfvis.render.barchart(surface, [{index: 'Restore', value: 0}], {});
+            
+            // Даем время на создание визора
+            setTimeout(() => {
+                visor = document.querySelector('.tfjs-visor__root');
+                if (visor) {
+                    visor.style.display = 'block';
+                    button.innerHTML = '<span class="icon">📊</span> Hide charts';
+                    button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
+                    
+                    // Пересоздаем основные графики
+                    recreateVisualizations();
+                }
+            }, 100);
         } else {
-            // Скрываем визор
-            visor.style.display = 'none';
-            button.innerHTML = '<span class="icon">📊</span> Показать графики';
-            button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            alert('Charts are not loaded yet. Please click "Inspect Data" first.');
         }
-    } else {
-        alert('Графики еще не загружены. Сначала нажмите "Inspect Data".');
+        return;
     }
+    
+    // Стандартное переключение видимости
+    if (visor.style.display === 'none' || visor.style.display === '') {
+        visor.style.display = 'block';
+        button.innerHTML = '<span class="icon">📊</span> Hide charts';
+        button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
+    } else {
+        visor.style.display = 'none';
+        button.innerHTML = '<span class="icon">📊</span> Show charts';
+        button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }
+}
+
+// Функция для пересоздания визуализаций
+function recreateVisualizations() {
+    if (!trainData) return;
+    
+    // Пересоздаем основные графики
+    const survivalBySex = {};
+    trainData.forEach(row => {
+        if (row.Sex && row.Survived !== undefined) {
+            if (!survivalBySex[row.Sex]) {
+                survivalBySex[row.Sex] = { survived: 0, total: 0 };
+            }
+            survivalBySex[row.Sex].total++;
+            if (row.Survived === 1) {
+                survivalBySex[row.Sex].survived++;
+            }
+        }
+    });
+    
+    const sexData = [
+        { index: 'male', value: (survivalBySex.male.survived / survivalBySex.male.total) * 100 },
+        { index: 'female', value: (survivalBySex.female.survived / survivalBySex.female.total) * 100 }
+    ];
+    
+    tfvis.render.barchart(
+        { name: 'Survival Rate by Sex', tab: 'Charts' },
+        sexData,
+        { 
+            xLabel: 'Sex', 
+            yLabel: 'Survival Rate (%)',
+            yAxisDomain: [0, 100],
+            color: ['#FF6B6B', '#4ECDC4']
+        }
+    );
+    
+    // Survival by Pclass
+    const survivalByPclass = {};
+    trainData.forEach(row => {
+        if (row.Pclass !== undefined && row.Survived !== undefined) {
+            if (!survivalByPclass[row.Pclass]) {
+                survivalByPclass[row.Pclass] = { survived: 0, total: 0 };
+            }
+            survivalByPclass[row.Pclass].total++;
+            if (row.Survived === 1) {
+                survivalByPclass[row.Pclass].survived++;
+            }
+        }
+    });
+    
+    const pclassData = [
+        { index: 'Class 1', value: (survivalByPclass[1].survived / survivalByPclass[1].total) * 100 },
+        { index: 'Class 2', value: (survivalByPclass[2].survived / survivalByPclass[2].total) * 100 },
+        { index: 'Class 3', value: (survivalByPclass[3].survived / survivalByPclass[3].total) * 100 }
+    ];
+    
+    tfvis.render.barchart(
+        { name: 'Survival Rate by Passenger Class', tab: 'Charts' },
+        pclassData,
+        { 
+            xLabel: 'Passenger Class', 
+            yLabel: 'Survival Rate (%)',
+            yAxisDomain: [0, 100],
+            color: ['#45B7D1', '#96CEB4', '#FEEA00']
+        }
+    );
 }
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    // Скрываем стандартную кнопку tfjs-vis
-    const style = document.createElement('style');
-    style.textContent = `
-        .tfjs-visor__root .tfjs-visor__content {
-            display: block !important;
+    // Сохраняем ссылку на оригинальную функцию tfjs-vis
+    const originalShow = tfvis.visor().hide;
+    
+    // Переопределяем метод hide чтобы отслеживать состояние
+    tfvis.visor().hide = function() {
+        const button = document.getElementById('visor-toggle-btn');
+        if (button) {
+            button.innerHTML = '<span class="icon">📊</span> Show charts';
+            button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         }
-    `;
-    document.head.appendChild(style);
+        return originalShow.call(this);
+    };
 });
 
