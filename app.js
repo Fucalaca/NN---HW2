@@ -177,8 +177,13 @@ function createVisualizations() {
     const chartsDiv = document.getElementById('charts');
     chartsDiv.innerHTML = '<h3>Data Visualizations</h3>';
     
-    // Survival by Sex - FIXED DATA FORMAT
+    console.log('=== DEBUG VISUALIZATIONS ===');
+    console.log('Train data length:', trainData.length);
+    
+    // Survival by Sex - DEBUG VERSION
     const survivalBySex = {};
+    let processedRows = 0;
+    
     trainData.forEach(row => {
         if (row.Sex && row.Survived !== undefined) {
             if (!survivalBySex[row.Sex]) {
@@ -188,66 +193,42 @@ function createVisualizations() {
             if (row.Survived === 1) {
                 survivalBySex[row.Sex].survived++;
             }
+            processedRows++;
         }
     });
     
-    // FIX: Use the correct data format for tfjs-vis barchart
-    const sexValues = [
-        { index: 'male', value: (survivalBySex.male?.survived / survivalBySex.male?.total * 100) || 0 },
-        { index: 'female', value: (survivalBySex.female?.survived / survivalBySex.female?.total * 100) || 0 }
-    ];
+    console.log('Processed rows for sex:', processedRows);
+    console.log('Survival by sex:', survivalBySex);
     
-    console.log('Sex Values:', sexValues);
-    
-    // FIX: Render with correct data structure
-    tfvis.render.barchart(
-        { name: 'Survival Rate by Sex', tab: 'Charts' },
-        sexValues,
-        { 
-            xLabel: 'Sex', 
-            yLabel: 'Survival Rate (%)',
-            yAxisDomain: [0, 100]
-        }
-    );
-    
-    // Survival by Pclass - FIXED DATA FORMAT
-    const survivalByPclass = {};
-    trainData.forEach(row => {
-        if (row.Pclass !== undefined && row.Survived !== undefined) {
-            if (!survivalByPclass[row.Pclass]) {
-                survivalByPclass[row.Pclass] = { survived: 0, total: 0 };
-            }
-            survivalByPclass[row.Pclass].total++;
-            if (row.Survived === 1) {
-                survivalByPclass[row.Pclass].survived++;
-            }
-        }
+    const sexData = Object.entries(survivalBySex).map(([sex, stats]) => {
+        const rate = (stats.survived / stats.total) * 100;
+        console.log(`Sex: ${sex}, Survived: ${stats.survived}, Total: ${stats.total}, Rate: ${rate}%`);
+        return { x: sex, y: rate };
     });
     
-    // FIX: Use the correct data format for tfjs-vis barchart
-    const pclassValues = [
-        { index: 'Class 1', value: (survivalByPclass[1]?.survived / survivalByPclass[1]?.total * 100) || 0 },
-        { index: 'Class 2', value: (survivalByPclass[2]?.survived / survivalByPclass[2]?.total * 100) || 0 },
-        { index: 'Class 3', value: (survivalByPclass[3]?.survived / survivalByPclass[3]?.total * 100) || 0 }
-    ];
+    console.log('Final sex data for chart:', sexData);
     
-    console.log('Pclass Values:', pclassValues);
-    
-    // FIX: Render with correct data structure
-    tfvis.render.barchart(
-        { name: 'Survival Rate by Passenger Class', tab: 'Charts' },
-        pclassValues,
-        { 
-            xLabel: 'Passenger Class', 
-            yLabel: 'Survival Rate (%)',
-            yAxisDomain: [0, 100]
-        }
-    );
+    // Try different data formats
+    if (sexData.length > 0) {
+        // Format 1: Original
+        tfvis.render.barchart(
+            { name: 'Survival Rate by Sex - Format 1', tab: 'Charts' },
+            sexData,
+            { xLabel: 'Sex', yLabel: 'Survival Rate (%)' }
+        );
+        
+        // Format 2: Alternative
+        const values = sexData.map(d => d.y);
+        const labels = sexData.map(d => d.x);
+        tfvis.render.barchart(
+            { name: 'Survival Rate by Sex - Format 2', tab: 'Charts' },
+            { values: values, labels: labels },
+            { xLabel: 'Sex', yLabel: 'Survival Rate (%)' }
+        );
+    }
     
     chartsDiv.innerHTML += '<p>Charts are displayed in the tfjs-vis visor. Click the button in the bottom right to view.</p>';
-    
-    // Add debug info
-    chartsDiv.innerHTML += `<p><strong>Debug Info:</strong> Male survival: ${pclassValues.find(d => d.index === 'Class 1')?.value.toFixed(1)}%, Female survival: ${pclassValues.find(d => d.index === 'Class 2')?.value.toFixed(1)}%</p>`;
+    chartsDiv.innerHTML += `<p>Debug: Check browser console (F12) for data details</p>`;
 }
 
 // Preprocess the data
