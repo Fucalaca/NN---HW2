@@ -29,4 +29,5 @@ But the website has bugs, that you need to fix:
 1)When we upload the test and train data (i also added them here). The column name has following format "Braund, Mr. Owen Harris". The website function does not display it right, it separate the name before comma to column "name", while the surname after comma goes to column "sex". Like this: 
 PassengerId	Survived	Pclass	Name	Sex	Age	SibSp	Parch	Ticket	Fare	Cabin	Embarked
 1	0	3	"Braund	Mr. Owen Harris"	male	22	1	0	A/5 21171	7.25	NULL
+
 2) Evaluation table not show up
