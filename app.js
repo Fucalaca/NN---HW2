@@ -854,14 +854,10 @@ function recreateVisualizations() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Hide visor immediately on page load
-    const style = document.createElement('style');
-    style.textContent = `
-        .tfjs-visor__root {
-            display: none !important;
-        }
-    `;
-    document.head.appendChild(style);
+    // Закрываем визор при загрузке страницы
+    if (tfvis.visor().isOpen()) {
+        tfvis.visor().close();
+    }
     
     // Перехватываем стандартное закрытие визора
     const originalClose = tfvis.visor().close;
@@ -873,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return originalClose.call(this);
     };
-    
+      
     // Перехватываем стандартное открытие визора
     const originalOpen = tfvis.visor().open;
     tfvis.visor().open = function() {
