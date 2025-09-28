@@ -620,7 +620,9 @@ async function predict() {
         
         // Make predictions
         testPredictions = model.predict(testFeatures);
-        const predValues = testPredictions.arraySync();
+        
+        // FIX: Properly extract prediction values
+        const predValues = await testPredictions.data(); // Use .data() instead of arraySync()
         
         // Create prediction results
         const results = preprocessedTestData.passengerIds.map((id, i) => ({
@@ -642,7 +644,6 @@ async function predict() {
         console.error(error);
     }
 }
-
 // Create prediction table
 function createPredictionTable(data) {
     const table = document.createElement('table');
@@ -659,11 +660,23 @@ function createPredictionTable(data) {
     // Create data rows
     data.forEach(row => {
         const tr = document.createElement('tr');
-        ['PassengerId', 'Survived', 'Probability'].forEach(key => {
-            const td = document.createElement('td');
-            td.textContent = key === 'Probability' ? row[key].toFixed(4) : row[key];
-            tr.appendChild(td);
-        });
+        
+        // PassengerId
+        const tdId = document.createElement('td');
+        tdId.textContent = row.PassengerId;
+        tr.appendChild(tdId);
+        
+        // Survived
+        const tdSurvived = document.createElement('td');
+        tdSurvived.textContent = row.Survived;
+        tr.appendChild(tdSurvived);
+        
+        // Probability - FIX: Handle number formatting safely
+        const tdProb = document.createElement('td');
+        const prob = typeof row.Probability === 'number' ? row.Probability : parseFloat(row.Probability);
+        tdProb.textContent = prob.toFixed(4);
+        tr.appendChild(tdProb);
+        
         table.appendChild(tr);
     });
     
@@ -682,7 +695,7 @@ async function exportResults() {
     
     try {
         // Get predictions
-        const predValues = testPredictions.arraySync();
+        const predValues = await testPredictions.data();
         
         // Create submission CSV (PassengerId, Survived)
         let submissionCSV = 'PassengerId,Survived\n';
