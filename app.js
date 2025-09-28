@@ -61,22 +61,49 @@ function readFile(file) {
 // Parse CSV text to array of objects
 function parseCSV(csvText) {
     const lines = csvText.split('\n').filter(line => line.trim() !== '');
-    const headers = lines[0].split(',').map(header => header.trim());
+    if (lines.length === 0) return [];
+    
+    // Parse headers first
+    const headers = parseCSVLine(lines[0]);
     
     return lines.slice(1).map(line => {
-        const values = line.split(',').map(value => value.trim());
+        const values = parseCSVLine(line);
         const obj = {};
         headers.forEach((header, i) => {
             // Handle missing values (empty strings)
-            obj[header] = values[i] === '' ? null : values[i];
+            obj[header] = i < values.length && values[i] !== '' ? values[i] : null;
             
             // Convert numerical values to numbers if possible
-            if (!isNaN(obj[header]) && obj[header] !== null) {
+            if (obj[header] !== null && !isNaN(obj[header]) && obj[header] !== '') {
                 obj[header] = parseFloat(obj[header]);
             }
         });
         return obj;
     });
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    // Push the last field
+    result.push(current.trim());
+    
+    return result;
 }
 
 // Inspect the loaded data
@@ -424,7 +451,7 @@ async function trainModel() {
         validationData = valFeatures;
         validationLabels = valLabels;
         
-        // Train the model
+        // Train the model - FIXED: Removed duplicate callbacks
         trainingHistory = await model.fit(trainFeatures, trainLabels, {
             epochs: 50,
             batchSize: 32,
@@ -432,13 +459,13 @@ async function trainModel() {
             callbacks: tfvis.show.fitCallbacks(
                 { name: 'Training Performance' },
                 ['loss', 'acc', 'val_loss', 'val_acc'],
-                { callbacks: ['onEpochEnd'] }
-            ),
-            callbacks: {
-                onEpochEnd: (epoch, logs) => {
-                    statusDiv.innerHTML = `Epoch ${epoch + 1}/50 - loss: ${logs.loss.toFixed(4)}, acc: ${logs.acc.toFixed(4)}, val_loss: ${logs.val_loss.toFixed(4)}, val_acc: ${logs.val_acc.toFixed(4)}`;
+                { 
+                    callbacks: ['onEpochEnd'],
+                    onEpochEnd: (epoch, logs) => {
+                        statusDiv.innerHTML = `Epoch ${epoch + 1}/50 - loss: ${logs.loss.toFixed(4)}, acc: ${logs.acc.toFixed(4)}, val_loss: ${logs.val_loss.toFixed(4)}, val_acc: ${logs.val_acc.toFixed(4)}`;
+                    }
                 }
-            }
+            )
         });
         
         statusDiv.innerHTML += '<p>Training completed!</p>';
@@ -487,10 +514,22 @@ async function updateMetrics() {
     // Update confusion matrix display
     const cmDiv = document.getElementById('confusion-matrix');
     cmDiv.innerHTML = `
-        <table>
-            <tr><th></th><th>Predicted Positive</th><th>Predicted Negative</th></tr>
-            <tr><th>Actual Positive</th><td>${tp}</td><td>${fn}</td></tr>
-            <tr><th>Actual Negative</th><td>${fp}</td><td>${tn}</td></tr>
+        <table style="border-collapse: collapse; width: 100%;">
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px;"></th>
+                <th style="border: 1px solid #ddd; padding: 8px;">Predicted Positive</th>
+                <th style="border: 1px solid #ddd; padding: 8px;">Predicted Negative</th>
+            </tr>
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px;">Actual Positive</th>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${tp}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${fn}</td>
+            </tr>
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px;">Actual Negative</th>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${fp}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${tn}</td>
+            </tr>
         </table>
     `;
     
