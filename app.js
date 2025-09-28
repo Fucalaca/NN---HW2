@@ -177,151 +177,61 @@ function createVisualizations() {
     const chartsDiv = document.getElementById('charts');
     chartsDiv.innerHTML = '<h3>Data Visualizations</h3>';
     
-    try {
-        // Initialize tfjs-vis visor
-        const visor = tfvis.visor();
-        if (!visor.isOpen()) {
-            visor.open();
+    // Survival by Sex
+    const survivalBySex = {};
+    trainData.forEach(row => {
+        if (row.Sex && row.Survived !== undefined) {
+            if (!survivalBySex[row.Sex]) {
+                survivalBySex[row.Sex] = { survived: 0, total: 0 };
+            }
+            survivalBySex[row.Sex].total++;
+            if (row.Survived === 1) {
+                survivalBySex[row.Sex].survived++;
+            }
         }
-        
-        // Clear any existing charts
-        visor.close();
-        visor.open();
-        
-        // Survival by Sex
-        const survivalBySex = {};
-        trainData.forEach(row => {
-            if (row.Sex && row.Survived !== undefined && row.Survived !== null) {
-                if (!survivalBySex[row.Sex]) {
-                    survivalBySex[row.Sex] = { survived: 0, total: 0 };
-                }
-                survivalBySex[row.Sex].total++;
-                if (row.Survived === 1) {
-                    survivalBySex[row.Sex].survived++;
-                }
-            }
-        });
-        
-        const sexData = Object.entries(survivalBySex).map(([sex, stats]) => ({
-            x: sex,
-            y: (stats.survived / stats.total) * 100
-        }));
-        
-        console.log('Sex data for chart:', sexData);
-        
-        // Survival by Pclass
-        const survivalByPclass = {};
-        trainData.forEach(row => {
-            if (row.Pclass !== undefined && row.Pclass !== null && row.Survived !== undefined && row.Survived !== null) {
-                const pclass = `Class ${row.Pclass}`;
-                if (!survivalByPclass[pclass]) {
-                    survivalByPclass[pclass] = { survived: 0, total: 0 };
-                }
-                survivalByPclass[pclass].total++;
-                if (row.Survived === 1) {
-                    survivalByPclass[pclass].survived++;
-                }
-            }
-        });
-        
-        const pclassData = Object.entries(survivalByPclass).map(([pclass, stats]) => ({
-            x: pclass,
-            y: (stats.survived / stats.total) * 100
-        }));
-        
-        console.log('Pclass data for chart:', pclassData);
-        
-        // Render charts with surface
-        tfvis.render.barchart(
-            { name: 'Survival Rate by Sex', tab: 'Charts' },
-            sexData,
-            { 
-                xLabel: 'Sex', 
-                yLabel: 'Survival Rate (%)',
-                yAxisDomain: [0, 100]
-            }
-        );
-        
-        tfvis.render.barchart(
-            { name: 'Survival Rate by Passenger Class', tab: 'Charts' },
-            pclassData,
-            { 
-                xLabel: 'Passenger Class', 
-                yLabel: 'Survival Rate (%)',
-                yAxisDomain: [0, 100]
-            }
-        );
-        
-        // Create HTML charts as primary display
-        createHTMLCharts(sexData, pclassData);
-        
-        // Add manual button to open visor
-        addVisorButton();
-        
-    } catch (error) {
-        console.error('Error creating visualizations:', error);
-        chartsDiv.innerHTML += `<p style="color: red;">Error creating charts: ${error.message}</p>`;
-    }
-}
-
-// Add manual button to open tfjs-vis visor
-function addVisorButton() {
-    const chartsDiv = document.getElementById('charts');
+    });
     
-    // Remove existing button if any
-    const existingButton = document.getElementById('manual-visor-btn');
-    if (existingButton) {
-        existingButton.remove();
-    }
+    // FIX: Create proper data structure for tfjs-vis
+    const sexChartData = Object.entries(survivalBySex).map(([sex, stats]) => ({
+        index: sex,
+        value: (stats.survived / stats.total) * 100
+    }));
     
-    const button = document.createElement('button');
-    button.id = 'manual-visor-btn';
-    button.textContent = 'Open Chart Panel';
-    button.onclick = () => {
-        const visor = tfvis.visor();
-        if (visor.isOpen()) {
-            visor.close();
+    // FIX: Use correct chart rendering with proper data format
+    tfvis.render.barchart(
+        { name: 'Survival Rate by Sex', tab: 'Charts' },
+        { values: sexChartData.map(d => d.value), labels: sexChartData.map(d => d.index) },
+        { xLabel: 'Sex', yLabel: 'Survival Rate (%)' }
+    );
+    
+    // Survival by Pclass
+    const survivalByPclass = {};
+    trainData.forEach(row => {
+        if (row.Pclass !== undefined && row.Survived !== undefined) {
+            if (!survivalByPclass[row.Pclass]) {
+                survivalByPclass[row.Pclass] = { survived: 0, total: 0 };
+            }
+            survivalByPclass[row.Pclass].total++;
+            if (row.Survived === 1) {
+                survivalByPclass[row.Pclass].survived++;
+            }
         }
-        visor.open();
-    };
-    
-    chartsDiv.appendChild(button);
-    chartsDiv.innerHTML += '<p><strong>If charts are not visible, click the "Open Chart Panel" button above.</strong></p>';
-}
-
-// Create simple HTML charts
-function createHTMLCharts(sexData, pclassData) {
-    const chartsDiv = document.getElementById('charts');
-    
-    // Create HTML bar chart for sex
-    let sexHTML = '<h4>Survival Rate by Sex</h4><div style="display: flex; align-items: flex-end; height: 200px; gap: 40px; margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 5px;">';
-    sexData.forEach(item => {
-        const height = item.y;
-        sexHTML += `
-            <div style="text-align: center;">
-                <div style="background: linear-gradient(to top, #1a73e8, #0d62c9); width: 60px; height: ${height}%; margin: 0 auto; border-radius: 3px 3px 0 0;"></div>
-                <div style="margin-top: 10px; font-weight: bold;">${item.x}</div>
-                <div>${item.y.toFixed(1)}%</div>
-            </div>
-        `;
     });
-    sexHTML += '</div>';
     
-    // Create HTML bar chart for passenger class
-    let pclassHTML = '<h4>Survival Rate by Passenger Class</h4><div style="display: flex; align-items: flex-end; height: 200px; gap: 40px; margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 5px;">';
-    pclassData.forEach(item => {
-        const height = item.y;
-        pclassHTML += `
-            <div style="text-align: center;">
-                <div style="background: linear-gradient(to top, #34a853, #2e8b47); width: 60px; height: ${height}%; margin: 0 auto; border-radius: 3px 3px 0 0;"></div>
-                <div style="margin-top: 10px; font-weight: bold;">${item.x}</div>
-                <div>${item.y.toFixed(1)}%</div>
-            </div>
-        `;
-    });
-    pclassHTML += '</div>';
+    // FIX: Create proper data structure for tfjs-vis
+    const pclassChartData = Object.entries(survivalByPclass).map(([pclass, stats]) => ({
+        index: `Class ${pclass}`,
+        value: (stats.survived / stats.total) * 100
+    }));
     
-    chartsDiv.innerHTML += sexHTML + pclassHTML;
+    // FIX: Use correct chart rendering with proper data format
+    tfvis.render.barchart(
+        { name: 'Survival Rate by Passenger Class', tab: 'Charts' },
+        { values: pclassChartData.map(d => d.value), labels: pclassChartData.map(d => d.index) },
+        { xLabel: 'Passenger Class', yLabel: 'Survival Rate (%)' }
+    );
+    
+    chartsDiv.innerHTML += '<p>Charts are displayed in the tfjs-vis visor. Click the button in the bottom right to view.</p>';
 }
 
 // Preprocess the data
