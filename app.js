@@ -177,61 +177,73 @@ function createVisualizations() {
     const chartsDiv = document.getElementById('charts');
     chartsDiv.innerHTML = '<h3>Data Visualizations</h3>';
     
-    // Survival by Sex
-    const survivalBySex = {};
-    trainData.forEach(row => {
-        if (row.Sex && row.Survived !== undefined) {
-            if (!survivalBySex[row.Sex]) {
-                survivalBySex[row.Sex] = { survived: 0, total: 0 };
+    // Add a small delay to ensure DOM is ready
+    setTimeout(() => {
+        // Survival by Sex
+        const survivalBySex = {};
+        trainData.forEach(row => {
+            if (row.Sex && row.Survived !== undefined && row.Survived !== null) {
+                if (!survivalBySex[row.Sex]) {
+                    survivalBySex[row.Sex] = { survived: 0, total: 0 };
+                }
+                survivalBySex[row.Sex].total++;
+                if (row.Survived === 1) {
+                    survivalBySex[row.Sex].survived++;
+                }
             }
-            survivalBySex[row.Sex].total++;
-            if (row.Survived === 1) {
-                survivalBySex[row.Sex].survived++;
+        });
+        
+        const sexData = Object.entries(survivalBySex).map(([sex, stats]) => ({
+            x: sex,
+            y: (stats.survived / stats.total) * 100
+        }));
+        
+        console.log('Sex Data:', sexData); // Debug log
+        
+        // Render with surface configuration
+        tfvis.render.barchart(
+            { name: 'Survival Rate by Sex', tab: 'Charts' },
+            sexData,
+            { 
+                xLabel: 'Sex', 
+                yLabel: 'Survival Rate (%)',
+                yAxisDomain: [0, 100]
             }
-        }
-    });
-    
-    // FIX: Create proper data structure for tfjs-vis
-    const sexChartData = Object.entries(survivalBySex).map(([sex, stats]) => ({
-        index: sex,
-        value: (stats.survived / stats.total) * 100
-    }));
-    
-    // FIX: Use correct chart rendering with proper data format
-    tfvis.render.barchart(
-        { name: 'Survival Rate by Sex', tab: 'Charts' },
-        { values: sexChartData.map(d => d.value), labels: sexChartData.map(d => d.index) },
-        { xLabel: 'Sex', yLabel: 'Survival Rate (%)' }
-    );
-    
-    // Survival by Pclass
-    const survivalByPclass = {};
-    trainData.forEach(row => {
-        if (row.Pclass !== undefined && row.Survived !== undefined) {
-            if (!survivalByPclass[row.Pclass]) {
-                survivalByPclass[row.Pclass] = { survived: 0, total: 0 };
+        );
+        
+        // Survival by Pclass
+        const survivalByPclass = {};
+        trainData.forEach(row => {
+            if (row.Pclass !== undefined && row.Pclass !== null && row.Survived !== undefined && row.Survived !== null) {
+                if (!survivalByPclass[row.Pclass]) {
+                    survivalByPclass[row.Pclass] = { survived: 0, total: 0 };
+                }
+                survivalByPclass[row.Pclass].total++;
+                if (row.Survived === 1) {
+                    survivalByPclass[row.Pclass].survived++;
+                }
             }
-            survivalByPclass[row.Pclass].total++;
-            if (row.Survived === 1) {
-                survivalByPclass[row.Pclass].survived++;
+        });
+        
+        const pclassData = Object.entries(survivalByPclass).map(([pclass, stats]) => ({
+            x: `Class ${pclass}`,
+            y: (stats.survived / stats.total) * 100
+        }));
+        
+        console.log('Pclass Data:', pclassData); // Debug log
+        
+        tfvis.render.barchart(
+            { name: 'Survival Rate by Passenger Class', tab: 'Charts' },
+            pclassData,
+            { 
+                xLabel: 'Passenger Class', 
+                yLabel: 'Survival Rate (%)',
+                yAxisDomain: [0, 100]
             }
-        }
-    });
-    
-    // FIX: Create proper data structure for tfjs-vis
-    const pclassChartData = Object.entries(survivalByPclass).map(([pclass, stats]) => ({
-        index: `Class ${pclass}`,
-        value: (stats.survived / stats.total) * 100
-    }));
-    
-    // FIX: Use correct chart rendering with proper data format
-    tfvis.render.barchart(
-        { name: 'Survival Rate by Passenger Class', tab: 'Charts' },
-        { values: pclassChartData.map(d => d.value), labels: pclassChartData.map(d => d.index) },
-        { xLabel: 'Passenger Class', yLabel: 'Survival Rate (%)' }
-    );
-    
-    chartsDiv.innerHTML += '<p>Charts are displayed in the tfjs-vis visor. Click the button in the bottom right to view.</p>';
+        );
+        
+        chartsDiv.innerHTML += '<p>Charts are displayed in the tfjs-vis visor. Click the button in the bottom right to view.</p>';
+    }, 100);
 }
 
 // Preprocess the data
