@@ -853,13 +853,16 @@ function recreateVisualizations() {
     );
 }
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    // Закрываем визор при загрузке страницы
-    if (tfvis.visor().isOpen()) {
-        tfvis.visor().close();
-    }
-
+    // Hide visor immediately on page load
+    const style = document.createElement('style');
+    style.textContent = `
+        .tfjs-visor__root {
+            display: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
     // Перехватываем стандартное закрытие визора
     const originalClose = tfvis.visor().close;
     tfvis.visor().close = function() {
