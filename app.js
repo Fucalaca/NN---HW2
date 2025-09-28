@@ -753,4 +753,39 @@ async function exportResults() {
         statusDiv.innerHTML = `Error during export: ${error.message}`;
         console.error(error);
     }
+} // <-- Закрывающая скобка для exportResults()
+
+// Функция для переключения визора tfjs-vis
+function toggleVisor() {
+    const visor = document.querySelector('.tfjs-visor__root');
+    const button = document.getElementById('visor-toggle-btn');
+    
+    if (visor) {
+        if (visor.style.display === 'none' || visor.style.display === '') {
+            // Показываем визор
+            visor.style.display = 'block';
+            button.innerHTML = '<span class="icon">📊</span> Скрыть графики';
+            button.style.background = 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)';
+        } else {
+            // Скрываем визор
+            visor.style.display = 'none';
+            button.innerHTML = '<span class="icon">📊</span> Показать графики';
+            button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        }
+    } else {
+        alert('Графики еще не загружены. Сначала нажмите "Inspect Data".');
+    }
 }
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    // Скрываем стандартную кнопку tfjs-vis
+    const style = document.createElement('style');
+    style.textContent = `
+        .tfjs-visor__root .tfjs-visor__content {
+            display: block !important;
+        }
+    `;
+    document.head.appendChild(style);
+});
+
